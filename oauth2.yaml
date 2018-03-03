@@ -1,0 +1,536 @@
+openapi: 3.0.0
+servers:
+  - url: 'https://connect.yourcompany.com/'
+info:
+  description: OAuth2 APIs
+  version: 1.0.0
+  title: OAuth2
+tags:
+  - name: OAuth2
+    description: The OAuth 2.0 authorization framework enables a third-party application to obtain limited access to an HTTP service, either on behalf of a resource owner by orchestrating an approval interaction between the resource owner and the HTTP service, or by allowing the third-party application to obtain access on its own behalf.
+paths:
+  /authorize:
+    get:
+      tags:
+        - OAuth2    
+      summary: Obtain an authorization grant
+      description: >
+        The authorization endpoint is used to interact with the resource owner and obtain an authorization grant.  The authorization server MUST first verify the identity of the resource owner.
+
+        Example:
+
+
+        ```
+
+        GET
+        https://connect.yourcompany.com/authorize?response_type=code&client_id=s6BhdRkqt3&state=xyz&redirect_uri=https%3A%2F%2Fclient%2Eexample%2Ecom%2Fcb HTTP/1.1 Host: server.example.com
+
+
+        ```
+
+
+        This endpoint is compatible with OpenID Connect and also supports the POST method, in which case the parameters are passed as a form post.
+
+
+        See also:
+          - [OAuth 2.0 Authorization Endpoint](http://tools.ietf.org/html/rfc6749#section-3.1)
+      operationId: authorize
+      parameters:
+        - name: response_type
+          in: query
+          description: >
+            The value MUST be one of "code" for requesting an authorization code, "token" for requesting an access token (implicit grant), or a registered extension value. If an authorization request is missing the "response_type" parameter, or if the response type is not understood, the authorization server MUST return an error response 
+          required: true
+          schema:
+            type: string
+        - name: client_id
+          in: query
+          description: >
+            A client ID obtained from the
+            [Dashboard](https://dashboard.yourcompany.com/).
+          required: true
+          schema:
+            type: string            
+        - name: scope
+          in: query
+          description: >
+            The space-separated identity claims to request from the end-user.
+            Always include `openid` as a scope for compatibility with OIDC.
+          required: true
+          schema:
+            type: string
+        - name: redirect_uri
+          in: query
+          description: >
+            The location to redirect to after (un)successful authentication. See
+            OIDC for the parameters passed in the query string
+            (`response_mode=query`) or as fragments (`response_mode=fragment`).
+            Unless the client is in test-mode this must be one of the registered
+            redirect URLs.
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          description: >
+            An opaque string that will be passed back to the redirect URL and
+            therefore can be used to communicate client side state and prevent
+            CSRF attacks.
+          required: true
+          schema:
+            type: string
+        - name: response_mode
+          in: query
+          description: >
+            Whether to append parameters to the redirect URL in the query string
+            (`query`) or as fragments (`fragment`). This option usually has a
+            sensible default for each of the response types.
+          required: false
+          schema:
+            type: string
+        - name: nonce
+          in: query
+          description: >
+            An nonce provided by the client (and opaque to YourCompany Connect)
+            that will be included in any ID Token generated for this session.
+            Clients should use the nonce to mitigate replay attacks.
+          required: false
+          schema:
+            type: string
+        - name: display
+          in: query
+          description: >
+            The authentication display mode, which can be one of `page`, `popup`
+            or `modal`. Defaults to `page`.
+          required: false
+          schema:
+            type: string
+            default: page
+        - name: prompt
+          in: query
+          description: >
+            Space-delimited, case sensitive list of ASCII string values that
+            specifies whether the Authorization Server prompts the End-User for
+            reauthentication and consent. The supported values are: `none`,
+            `login`, `consent`. If `consent` the end-user is asked to
+            (re)confirm what claims they share. Use `none` to check for an
+            active session.
+          required: false
+          schema:
+            type: string
+            default: login
+        - name: max_age
+          in: query
+          description: >
+            Specifies the allowable elapsed time in seconds since the last time
+            the end-user was actively authenticated.
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: ui_locales
+          in: query
+          description: >
+            Specifies the preferred language to use on the authorization page,
+            as a space-separated list of BCP47 language tags. Ignored at the
+            moment.
+          required: false
+          schema:
+            type: string
+      responses:
+        '302':
+          description: |
+            A successful or erroneous authentication response.
+  /token:
+    post:
+      summary: Obtain an ID Token
+      description: >
+        Exchange en authorization code for an ID Token or Access Token.
+
+
+        This endpoint supports both `client_secret_post` and
+        `client_secret_basic` authenticatino methods, as specified by the
+        client's `token_endpoint_auth_method`.
+
+
+        See also:
+          - [OAuth 2.0 Authorization Endpoint](http://tools.ietf.org/html/rfc6749#section-3.1)
+      tags:
+        - OAuth2
+      operationId: token
+      parameters:
+        - name: Authorization
+          in: header
+          description: |
+            HTTP Basic authorization header.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Token'
+        '400':
+          $ref: '#/components/responses/OAuth2Error'
+        '401':
+          $ref: '#/components/responses/OAuth2Error'
+      externalDocs:
+        description: OpenID Token Endpoint
+        url: 'http://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                client_id:
+                  description: |
+                    The registered client ID.
+                  type: string
+                client_secret:
+                  description: |
+                    The registered client ID secret.
+                  type: string
+                  format: password
+                grant_type:
+                  description: |
+                    The authorization grant type, must be `authorization_code`.
+                  type: string
+                code:
+                  description: >
+                    The authorization code previously obtained from the
+                    Authentication endpoint.
+                  type: string
+                redirect_uri:
+                  description: >
+                    The redirect URL that was used previously with the
+                    Authentication endpoint.
+                  type: string
+              required:
+                - client_id
+  /client:
+    get:
+      summary: List clients
+      tags:
+        - Client Management
+      description: |
+        Retrieve a list of clients.
+      operationId: client
+      responses:
+        '200':
+          description: A list of Client Objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+            application/x-www-form-urlencoded:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+            text/html:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+        default:
+          $ref: '#/components/responses/OAuth2Error'
+      security:
+        - client_registration_token: []
+        - oauth_code: []
+        - oauth_implicit: []
+    post:
+      summary: Register a client
+      tags:
+        - Client Management
+      description: >
+        Register a new client with this YourCompany Connect provider.
+
+
+        This endpoint is compatible with [OIDC's Client
+        Registration](http://openid.net/specs/openid-connect-registration-1_0.html)
+        extension.
+
+
+        See also:
+
+        - [OAuth 2.0 Authorization Endpoint](http://tools.ietf.org/html/rfc6749#section-3.1)
+      operationId: createClient
+      parameters: []
+      responses:
+        '201':
+          description: Client created
+          headers:
+            Location:
+              description: URL of new client resource
+              schema:
+                type: string
+        default:
+          $ref: '#/components/responses/ProblemDetail'
+      security:
+        - client_registration_token: []
+        - oauth_code: []
+        - oauth_implicit: []
+      requestBody:
+        $ref: '#/components/requestBodies/Client'
+  '/client/{client_id}':
+    get:
+      summary: View a client
+      tags:
+        - Client Management
+      description: >
+        Retrieve the configuration of a previously registered client.
+
+
+        See also:
+
+        - [OAuth 2.0 Authorization Endpoint](http://tools.ietf.org/html/rfc6749#section-3.1)
+      operationId: getClient
+      parameters:
+        - $ref: '#/components/parameters/client_id'
+      responses:
+        '200':
+          description: Client found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+            application/x-www-form-urlencoded:
+              schema:
+                $ref: '#/components/schemas/Client'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Client'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/Client'
+        default:
+          $ref: '#/components/responses/OAuth2Error'
+      security:
+        - client_registration_token: []
+        - oauth_code: []
+        - oauth_implicit: []
+    put:
+      summary: Update a client
+      tags:
+        - Client Management
+      description: >
+        Update the configuration of a previously registered client.
+
+
+        See also:
+
+        - [OAuth 2.0 Authorization Endpoint](http://tools.ietf.org/html/rfc6749#section-3.1)
+      operationId: updateClient
+      parameters:
+        - $ref: '#/components/parameters/client_id'
+      responses:
+        '200':
+          description: Client updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+            application/x-www-form-urlencoded:
+              schema:
+                $ref: '#/components/schemas/Client'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Client'
+            text/html:
+              schema:
+                $ref: '#/components/schemas/Client'
+        default:
+          $ref: '#/components/responses/ProblemDetail'
+      security:
+        - client_registration_token: []
+        - oauth_code: []
+        - oauth_implicit: []
+      requestBody:
+        $ref: '#/components/requestBodies/Client'
+    delete:
+      summary: Delete a client
+      tags:
+        - Client Management
+      description: |
+        Delete a previously registered client.
+      operationId: clientClient_id
+      parameters:
+        - $ref: '#/components/parameters/client_id'
+      responses:
+        '204':
+          description: Client deleted
+        default:
+          $ref: '#/components/responses/ProblemDetail'
+      security:
+        - client_registration_token: []
+        - oauth_code: []
+        - oauth_implicit: []
+externalDocs:
+  description: <Your Company> Developer Docs
+  url: 'https://developers.yourcompany.com/'
+components:
+  schemas:
+    Token:
+      description: |
+        Successful token response
+      required:
+        - token_type
+      properties:
+        token_type:
+          type: string
+        access_token:
+          description: The access token issued by the authorization server.
+          type: string
+        id_token:
+          description: ID Token value associated with the authenticated session.
+          type: string
+        refresh_token:
+          description: 'The refresh token issued to the client, if any.'
+          type: string
+        expires_in:
+          description: The lifetime in seconds of the access token.
+          type: integer
+          format: int32
+        expires_at:
+          description: The time the access token will expire in seconds since epoch.
+          type: integer
+          format: int64
+        scope:
+          description: The scope of the granted tokens.
+          type: string
+    OAuth2Error:
+      description: |
+        Error Response defined as in Section 5.2 of OAuth 2.0 [RFC6749].
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        error_description:
+          type: string
+    Client:
+      description: Client object
+      required:
+        - client_name
+        - client_uri
+      properties:
+        client_id:
+          type: string
+        redirect_uris:
+          type: array
+          items:
+            type: string
+        response_types:
+          type: array
+          items:
+            type: string
+        grant_types:
+          type: array
+          items:
+            type: string
+        application_type:
+          type: string
+        contacts:
+          type: array
+          items:
+            type: string
+        client_name:
+          type: string
+        logo_uri:
+          type: string
+        client_uri:
+          type: string
+        policy_uri:
+          type: string
+        tos_uri:
+          type: string
+        default_max_age:
+          type: integer
+          format: int64
+        default_scopes:
+          type: array
+          items:
+            type: string
+  responses:
+    Token:
+      description: Token response
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            $ref: '#/components/schemas/Token'
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Token'
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Token'
+        text/html:
+          schema:
+            $ref: '#/components/schemas/Token'
+    OAuth2Error:
+      description: OAuth 2.0 error response
+      content:
+        application/x-www-form-urlencoded:
+          schema:
+            $ref: '#/components/schemas/OAuth2Error'
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OAuth2Error'
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/OAuth2Error'
+        text/html:
+          schema:
+            $ref: '#/components/schemas/OAuth2Error'
+  parameters:
+    client_id:
+      name: client_id
+      in: path
+      description: Client identifier
+      required: true
+      schema:
+        type: string
+  examples: {}
+  requestBodies:
+    Client:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Client'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/Client'
+        application/x-www-form-urlencoded:
+          schema:
+            $ref: '#/components/schemas/Client'
+      description: Client Object
+  securitySchemes:
+    client_secret:
+      description: Session management by confidential clients.
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: 'https://connect.yourcompany.com/token'
+          scopes:
+            clients: Enable client management
+    client_registration_token:
+      description: Client management via registration token.
+      type: apiKey
+      name: Authorization
+      in: header
+    user_jwt:
+      description: Session management by YourCompany ID.
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: 'https://connect.yourcompany.com/token'
+          scopes:
+            session: Enable session management
+  headers: {}
