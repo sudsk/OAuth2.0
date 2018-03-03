@@ -43,6 +43,9 @@ paths:
           required: true
           schema:
             type: string
+            enum:
+            - "code"
+            - "token"            
         - name: client_id
           in: query
           description: >
@@ -54,35 +57,34 @@ paths:
         - name: scope
           in: query
           description: >
-            The space-separated identity claims to request from the end-user.
-            Always include `openid` as a scope for compatibility with OIDC.
-          required: true
+            A space-separated list of the permissions your application is requesting.
+          required: false
           schema:
             type: string
         - name: redirect_uri
           in: query
           description: >
-            The location to redirect to after (un)successful authentication. See
-            OIDC for the parameters passed in the query string
-            (`response_mode=query`) or as fragments (`response_mode=fragment`).
-            Unless the client is in test-mode this must be one of the registered
-            redirect URLs.
-          required: true
+            After completing its interaction with the resource owner, the authorization server directs the resource owner's user-agent back to  the client.  The authorization server redirects the user-agent to the client's redirection endpoint previously established with the authorization server during the client registration process or when making the authorization request.
+          required: false
           schema:
             type: string
         - name: state
           in: query
           description: >
-            An opaque string that will be passed back to the redirect URL and
-            therefore can be used to communicate client side state and prevent
-            CSRF attacks.
-          required: true
+            An opaque value used by the client to maintain state between the request and callback.  The authorization server includes this value when redirecting the user-agent back to the client.  The parameter SHOULD be used for preventing cross-site request forgery.
+          required: false
           schema:
             type: string
       responses:
         '302':
-          description: |
-            A successful or erroneous authentication response.
+          description: Found
+          headers:
+            Location:
+              description: The authorization server redirects the user-agent to the redirect_uri
+              schema:
+                type: string
+        '405':
+          description: Invalid input                
   /token:
     post:
       summary: Obtain an ID Token
@@ -149,7 +151,7 @@ paths:
                   type: string
               required:
                 - client_id
-  /client:
+  /clients:
     get:
       summary: List clients
       tags:
@@ -193,7 +195,7 @@ paths:
         - Client Management
       description: >
         Register a new client with this YourCompany Connect provider.
-
+        Before initiating the oauth protocol, the client MUST register with the authorization server.
 
         This endpoint is compatible with [OIDC's Client
         Registration](http://openid.net/specs/openid-connect-registration-1_0.html)
@@ -213,6 +215,8 @@ paths:
               description: URL of new client resource
               schema:
                 type: string
+        '405':
+          description: Invalid input                
       security:
         - client_registration_token: []
         - oauth_code: []
@@ -308,6 +312,60 @@ paths:
         - client_registration_token: []
         - oauth_code: []
         - oauth_implicit: []
+  /providers:
+    get:
+      summary: List providers
+      tags:
+        - Provider Management
+      description: |
+        Retrieve a list of providers.
+      operationId: client
+      responses:
+        '200':
+          description: A list of Provider Objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+            application/x-www-form-urlencoded:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+            application/problem+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+            text/html:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Client'
+        default:
+          $ref: '#/components/responses/OAuth2Error'
+      security:
+        - client_registration_token: []
+        - oauth_code: []
+        - oauth_implicit: []  
+    delete:
+      summary: Delete a provider
+      tags:
+        - Provider Management
+      description: |
+        Delete a SDK provider.
+      operationId: clientClient_id
+      parameters:
+        - $ref: '#/components/parameters/client_id'
+      responses:
+        '204':
+          description: Client deleted
+      security:
+        - client_registration_token: []
+        - oauth_code: []
+        - oauth_implicit: []        
 externalDocs:
   description: <Your Company> Developer Docs
   url: 'https://developers.yourcompany.com/'
@@ -359,6 +417,18 @@ components:
       properties:
         client_id:
           type: string
+          description: The authorization server issues the registered client a client identifier -- a unique string representing the registration information provided by the client.  The client identifier is not a  secret; it is exposed to the resource owner and MUST NOT be used  alone for client authentication.  The client identifier is unique to the authorization server.
+          readOnly: true
+        client_secret:
+          type: string
+          description: The client secret.   
+          readOnly: true           
+        client_type:
+          type: string
+          description: OAuth defines two client types, based on their ability to authenticate securely with the authorization server (i.e., ability to maintain the confidentiality of their client credentials). The client type designation is based on the authorization server's definition of secure authentication and its acceptable exposure levels of client credentials.  The authorization server SHOULD NOT make assumptions about the client type.
+          enum:
+          - 'confidential'
+          - 'public'          
         redirect_uris:
           type: array
           items:
@@ -394,6 +464,35 @@ components:
           type: array
           items:
             type: string
+    Error:
+      type: object
+      required:
+        - httpStatusCode
+        - customCode
+        - message
+      properties:
+        httpStatusCode:
+          type: integer
+          minimum: 100
+          maximum: 599
+          description: HTTP Status code for error
+        customCode:
+          type: string
+          description: Application specific error code
+        message:
+          type: string
+          description: Short message describing cause of error
+        description:
+          type: string
+          description: Details error description
+        errorHelpUrl:
+          type: string
+          description: >-
+            URL to page containing rich error description and resolution
+            examples
+        moreInfo:
+          type: string
+          description: More details describing error            
   responses:
     Token:
       description: Token response
