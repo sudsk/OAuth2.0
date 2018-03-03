@@ -29,7 +29,7 @@ paths:
         ```
 
 
-        This endpoint is compatible with OpenID Connect and also supports the POST method, in which case the parameters are passed as a form post.
+        This endpoint also supports the POST method, in which case the parameters are passed as a form post.
 
 
         See also:
@@ -77,64 +77,6 @@ paths:
             therefore can be used to communicate client side state and prevent
             CSRF attacks.
           required: true
-          schema:
-            type: string
-        - name: response_mode
-          in: query
-          description: >
-            Whether to append parameters to the redirect URL in the query string
-            (`query`) or as fragments (`fragment`). This option usually has a
-            sensible default for each of the response types.
-          required: false
-          schema:
-            type: string
-        - name: nonce
-          in: query
-          description: >
-            An nonce provided by the client (and opaque to YourCompany Connect)
-            that will be included in any ID Token generated for this session.
-            Clients should use the nonce to mitigate replay attacks.
-          required: false
-          schema:
-            type: string
-        - name: display
-          in: query
-          description: >
-            The authentication display mode, which can be one of `page`, `popup`
-            or `modal`. Defaults to `page`.
-          required: false
-          schema:
-            type: string
-            default: page
-        - name: prompt
-          in: query
-          description: >
-            Space-delimited, case sensitive list of ASCII string values that
-            specifies whether the Authorization Server prompts the End-User for
-            reauthentication and consent. The supported values are: `none`,
-            `login`, `consent`. If `consent` the end-user is asked to
-            (re)confirm what claims they share. Use `none` to check for an
-            active session.
-          required: false
-          schema:
-            type: string
-            default: login
-        - name: max_age
-          in: query
-          description: >
-            Specifies the allowable elapsed time in seconds since the last time
-            the end-user was actively authenticated.
-          required: false
-          schema:
-            type: integer
-            default: 0
-        - name: ui_locales
-          in: query
-          description: >
-            Specifies the preferred language to use on the authorization page,
-            as a space-separated list of BCP47 language tags. Ignored at the
-            moment.
-          required: false
           schema:
             type: string
       responses:
@@ -271,8 +213,6 @@ paths:
               description: URL of new client resource
               schema:
                 type: string
-        default:
-          $ref: '#/components/responses/ProblemDetail'
       security:
         - client_registration_token: []
         - oauth_code: []
@@ -346,8 +286,6 @@ paths:
             text/html:
               schema:
                 $ref: '#/components/schemas/Client'
-        default:
-          $ref: '#/components/responses/ProblemDetail'
       security:
         - client_registration_token: []
         - oauth_code: []
@@ -366,8 +304,6 @@ paths:
       responses:
         '204':
           description: Client deleted
-        default:
-          $ref: '#/components/responses/ProblemDetail'
       security:
         - client_registration_token: []
         - oauth_code: []
