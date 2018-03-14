@@ -8,6 +8,10 @@ info:
 tags:
   - name: OAuth2
     description: OAuth2 flow core APIs
+  - name: Client Management    
+    description: Client management APIs
+  - name: Provider Management
+    description: Provider management APIs
 paths:
   /authorize:
     get:
