@@ -4,7 +4,7 @@ servers:
 info:
   version: 1.0.0
   title: OAuth2
-  description: The OAuth 2.0 authorization framework enables a third-party application to obtain limited access to an HTTP service, either on behalf of a resource owner by orchestrating an approval interaction between the resource owner and the HTTP service, or by allowing the third-party application to obtain access on its own behalf. The APIs presented in this page caters to standard OAuth2 flow, Client management and Provider management and adheres to [RFC 6749](https://tools.ietf.org/html/rfc6749) standards. 
+  description: The OAuth 2.0 authorization framework enables a third-party application to obtain limited access to an HTTP service, either on behalf of a resource owner by orchestrating an approval interaction between the resource owner and the HTTP service, or by allowing the third-party application to obtain access on its own behalf. The APIs presented on this page caters to standard OAuth2 flow, Client management and Provider management and adheres to [RFC 6749](https://tools.ietf.org/html/rfc6749) standards. 
 tags:
   - name: OAuth2
     description: OAuth2 flow core APIs
